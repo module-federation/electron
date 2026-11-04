@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/module-federation/electron/compare/0.1.0...0.1.1) (2026-11-04)
+
+
+### Documentation
+
+* list requirements in the package README ([#9](https://github.com/module-federation/electron/issues/9)) ([c35a574](https://github.com/module-federation/electron/commit/c35a574dfbe2e47354db63c48007279e9338b44a))
+
 ## [0.1.0](https://github.com/module-federation/electron/compare/0.0.1...0.1.0) (2026-11-04)
 
 

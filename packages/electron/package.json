@@ -1,6 +1,6 @@
 {
   "name": "@module-federation/electron",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Module Federation for Electron renderers built with Rsbuild or Vite",
   "keywords": [
     "electron",
