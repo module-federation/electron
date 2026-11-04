@@ -1,0 +1,15 @@
+{
+  "name": "demo-zephyr-ota",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "local:build": "pnpm --filter 'ota-*' run build",
+    "local:edge": "node edge-server.mjs",
+    "local:rehearse": "node rehearse.mjs",
+    "zephyr:remotes": "pnpm --filter 'ota-remote-*' run build:zephyr",
+    "zephyr:remote-rsbuild": "pnpm --filter ota-remote-rsbuild run build:zephyr",
+    "zephyr:remote-vite": "pnpm --filter ota-remote-vite run build:zephyr",
+    "zephyr:host": "pnpm --filter ota-host run build:zephyr && pnpm --filter ota-electron run build",
+    "start": "pnpm --filter ota-electron start"
+  }
+}

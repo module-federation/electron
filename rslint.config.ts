@@ -5,13 +5,18 @@ export default defineConfig([
   js.configs.recommended,
   ts.configs.recommended,
   {
-    files: ['apps/**/*.tsx'],
+    files: ['apps/**/*.tsx', 'demo/**/*.tsx'],
     ...reactPlugin.configs.recommended,
   },
   {
     languageOptions: {
       parserOptions: {
-        project: ['./packages/*/tsconfig.json', './apps/*/tsconfig.json', './tsconfig.json'],
+        project: [
+          './packages/*/tsconfig.json',
+          './apps/*/tsconfig.json',
+          './demo/zephyr-ota/*/tsconfig.json',
+          './tsconfig.json',
+        ],
       },
     },
   },

@@ -1,0 +1,88 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --border: #d9dde3;
+  --muted: #5b6472;
+  --accent: #3b5bdb;
+  --error: #c92a2a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171c;
+    --card: #1f232b;
+    --border: #343a46;
+    --muted: #a3acb9;
+    --accent: #748ffc;
+    --error: #ff8787;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: grid;
+  gap: 16px;
+}
+
+header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+}
+
+header p,
+.card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.card.error h2 {
+  color: var(--error);
+}
+
+.card pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}

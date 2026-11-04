@@ -1,10 +1,15 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["node"], "isolatedDeclarations": false, "declaration": false },
+  "compilerOptions": {
+    "types": ["node"],
+    "isolatedDeclarations": false,
+    "declaration": false
+  },
   "include": [
     "*.config.ts",
     "packages/*/rslib.config.ts",
     "packages/*/rstest.config.ts",
-    "apps/electron/rslib.config.ts"
+    "apps/electron/rslib.config.ts",
+    "demo/zephyr-ota/electron/rslib.config.ts"
   ]
 }

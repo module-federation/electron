@@ -1,8 +1,15 @@
 packages:
   - apps/*
+  - demo/zephyr-ota
+  - demo/zephyr-ota/*
   - packages/*
 
 autoInstallPeers: false
 minimumReleaseAgeExclude:
   - '@module-federation/vite@1.23.9'
 preferFrozenLockfile: true
+
+# vite-plugin-zephyr lists rollup as a peer for its types only; Vite 8 builds with Rolldown.
+peerDependencyRules:
+  ignoreMissing:
+    - rollup

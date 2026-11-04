@@ -1,0 +1,18 @@
+{
+  "name": "ota-electron",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "rslib build",
+    "start": "electron .",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@module-federation/electron": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "ota-host": "workspace:*"
+  }
+}
