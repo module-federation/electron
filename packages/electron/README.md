@@ -13,6 +13,8 @@ pnpm add -D @module-federation/rsbuild-plugin   # Rsbuild
 pnpm add -D @module-federation/vite             # Vite, 1.23.9 or later
 ```
 
+Requires Electron 30 or later and Node.js 22.18+, 24.11+ or 26+ for builds. Rsbuild 2 and Vite 7 or 8 are supported.
+
 ## Main process
 
 ```ts

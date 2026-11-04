@@ -42,7 +42,9 @@ PR's changelog entry before merging if the commit titles need context.
 To force a version, the commit on `main` needs a `Release-As: x.y.z` footer.
 Squash merges here keep only the PR title and drop the body, and rebase merges
 drop empty commits, so set the footer when you merge:
-`gh pr merge <number> --squash --body "Release-As: x.y.z"`.
+`gh pr merge <number> --squash --body "Release-As: x.y.z"`. The commit must
+also change a file under `packages/electron/`, because release-please ignores
+commits outside the package path.
 
 Merging the release PR makes release-please tag the merge commit and publish a
 GitHub Release named after the version, without a `v` (`0.1.1`, not `v0.1.1`).
