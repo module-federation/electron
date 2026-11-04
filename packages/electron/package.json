@@ -41,16 +41,6 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./main": {
-      "import": {
-        "types": "./dist/main.d.ts",
-        "default": "./dist/main.js"
-      },
-      "require": {
-        "types": "./dist/main.d.cts",
-        "default": "./dist/main.cjs"
-      }
-    },
     "./rsbuild": {
       "import": {
         "types": "./dist/rsbuild.d.ts",

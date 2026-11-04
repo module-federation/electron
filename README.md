@@ -10,12 +10,13 @@ Requires Node.js 22.18+, 24.11+ or 26+ and pnpm 12.9.1.
 
 [`@module-federation/electron`](packages/electron) has one entry point per job:
 
-| Import                                | What it does                                                                  |
-| ------------------------------------- | ----------------------------------------------------------------------------- |
-| `@module-federation/electron`         | URL helpers (`federationUrl`, `federationBaseUrl`). No `electron` import.     |
-| `@module-federation/electron/main`    | Electron main process: registers and serves the `mf://` protocol.             |
-| `@module-federation/electron/rsbuild` | Wraps `@module-federation/rsbuild-plugin` and adds Electron defaults.         |
-| `@module-federation/electron/vite`    | Wraps `@module-federation/vite` (1.23.9 or later) and adds Electron defaults. |
+| Import                                | What it does                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `@module-federation/electron`         | Electron main process: registers and serves the `mf://` protocol. Also has the URL helpers. |
+| `@module-federation/electron/rsbuild` | Wraps `@module-federation/rsbuild-plugin` and adds Electron defaults.                       |
+| `@module-federation/electron/vite`    | Wraps `@module-federation/vite` (1.23.9 or later) and adds Electron defaults.               |
+
+The bundler entries re-export the URL helpers (`federationUrl`, `federationBaseUrl`), so build configs never load `electron`.
 
 Install the Module Federation plugin for your bundler next to it. Both are optional peer dependencies.
 
@@ -31,8 +32,11 @@ All apps share one origin, so ESM remote entries, `fetch` of `mf-manifest.json`,
 
 ```ts
 // main process
-import { federationUrl } from '@module-federation/electron';
-import { registerFederationScheme, serveFederatedApps } from '@module-federation/electron/main';
+import {
+  federationUrl,
+  registerFederationScheme,
+  serveFederatedApps,
+} from '@module-federation/electron';
 
 registerFederationScheme(); // before app is ready
 app.whenReady().then(() => {
@@ -43,7 +47,7 @@ app.whenReady().then(() => {
 
 ```ts
 // rsbuild.config.ts
-import { pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
+import { federationUrl, pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
 plugins: [pluginModuleFederationElectron({ name: 'host', remotes: { ... } })]
 
 // vite.config.ts

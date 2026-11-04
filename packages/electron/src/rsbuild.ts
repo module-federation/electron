@@ -2,10 +2,18 @@ import {
   type ModuleFederationOptions,
   pluginModuleFederation,
 } from '@module-federation/rsbuild-plugin';
-import { type FederationUrlOptions, federationBaseUrl } from './index.ts';
+import { type FederationUrlOptions, federationBaseUrl } from './url.ts';
 import type { RsbuildPlugin, RsbuildPlugins } from '@rsbuild/core';
 
 export type { ModuleFederationOptions };
+export {
+  DEFAULT_HOST,
+  DEFAULT_SCHEME,
+  federationBaseUrl,
+  federationUrl,
+  toAppId,
+  type FederationUrlOptions,
+} from './url.ts';
 
 export const PLUGIN_ELECTRON_NAME = '@module-federation/electron:rsbuild';
 

@@ -10,11 +10,11 @@ const importPackage = (specifier: string) => import(/* webpackIgnore: true */ sp
 const manifestPath = require.resolve('@module-federation/electron/package.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
+const urlHelpers = ['federationBaseUrl', 'federationUrl', 'toAppId'];
 const subpaths: Record<string, string[]> = {
-  '.': ['federationBaseUrl', 'federationUrl', 'toAppId'],
-  './main': ['registerFederationScheme', 'serveFederatedApps'],
-  './rsbuild': ['pluginElectron', 'pluginModuleFederationElectron'],
-  './vite': ['electron', 'federationElectron'],
+  '.': ['registerFederationScheme', 'serveFederatedApps', ...urlHelpers],
+  './rsbuild': ['pluginElectron', 'pluginModuleFederationElectron', ...urlHelpers],
+  './vite': ['electron', 'federationElectron', ...urlHelpers],
 };
 
 describe('package exports', () => {
@@ -30,8 +30,28 @@ describe('package exports', () => {
       }
     });
 
-    // `./main` imports `electron`, which only loads inside an Electron process.
-    if (subpath === './main') continue;
+    // The root entry imports `electron`, which only loads inside an Electron process.
+    // `pnpm smoke` covers it there.
+    if (subpath === '.') continue;
+
+    // Build configs load these entries, so they must not pull in `electron`.
+    it(`${specifier} does not import electron`, () => {
+      const target = manifest.exports[subpath];
+      for (const condition of ['import', 'require']) {
+        const seen = new Set<string>();
+        const visit = (file: string) => {
+          if (seen.has(file)) return;
+          seen.add(file);
+          const code = readFileSync(file, 'utf8');
+          expect(code).not.toMatch(/(?:from |require\()["']electron["']/);
+          for (const [, local] of code.matchAll(/(?:from |require\()["'](\.\/[^"']+)["']/g)) {
+            visit(path.join(path.dirname(file), local as string));
+          }
+        };
+        visit(path.join(path.dirname(manifestPath), target[condition].default));
+        expect(seen.size).toBeGreaterThan(1);
+      }
+    });
 
     it(`${specifier} loads with require()`, () => {
       const mod = require(specifier);

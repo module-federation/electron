@@ -1,5 +1,4 @@
-import { federationUrl } from '@module-federation/electron';
-import { pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
+import { federationUrl, pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 

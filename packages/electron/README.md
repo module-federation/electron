@@ -17,8 +17,11 @@ pnpm add -D @module-federation/vite             # Vite, 1.23.9 or later
 
 ```ts
 import { app, BrowserWindow } from 'electron';
-import { federationUrl } from '@module-federation/electron';
-import { registerFederationScheme, serveFederatedApps } from '@module-federation/electron/main';
+import {
+  federationUrl,
+  registerFederationScheme,
+  serveFederatedApps,
+} from '@module-federation/electron';
 
 registerFederationScheme(); // before `app` is ready
 
@@ -34,10 +37,11 @@ app.whenReady().then(() => {
 
 ## Rsbuild
 
+`./rsbuild` and `./vite` re-export the URL helpers, so build configs don't load `electron`.
+
 ```ts
 import { defineConfig } from '@rsbuild/core';
-import { federationUrl } from '@module-federation/electron';
-import { pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
+import { federationUrl, pluginModuleFederationElectron } from '@module-federation/electron/rsbuild';
 
 export default defineConfig({
   plugins: [

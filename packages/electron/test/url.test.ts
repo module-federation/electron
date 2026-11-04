@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { describe, expect, it } from '@rstest/core';
-import { federationBaseUrl, federationUrl, toAppId } from '../src/index.ts';
+import { federationBaseUrl, federationUrl, toAppId } from '../src/url.ts';
 import { resolveAppFile } from '../src/resolve.ts';
 
 describe('toAppId', () => {

@@ -1,42 +1,70 @@
 /**
- * Bundler-agnostic helpers. Safe to import from build tooling (no `electron` import).
+ * Electron main-process integration. Build configs should import the URL helpers
+ * from `@module-federation/electron/rsbuild` or `/vite` instead: this entry imports `electron`.
  */
+import { pathToFileURL } from 'node:url';
+import { net, protocol } from 'electron';
+import { resolveAppFile } from './resolve.ts';
+import { DEFAULT_HOST, DEFAULT_SCHEME, toAppId } from './url.ts';
 
-/** Default custom protocol scheme used to serve federated bundles inside Electron. */
-export const DEFAULT_SCHEME = 'mf';
+export { resolveAppFile } from './resolve.ts';
+export {
+  DEFAULT_HOST,
+  DEFAULT_SCHEME,
+  federationBaseUrl,
+  federationUrl,
+  toAppId,
+  type FederationUrlOptions,
+} from './url.ts';
 
-/** Default host for the custom protocol. Every app shares it, so they share one origin. */
-export const DEFAULT_HOST = 'local';
-
-export interface FederationUrlOptions {
+export interface RegisterSchemeOptions {
   scheme?: string;
-  host?: string;
 }
 
 /**
- * Turns a Module Federation `name` (e.g. `remote_vite`) into the path segment
- * used on the custom protocol (e.g. `remote-vite`).
+ * Registers the federation scheme as privileged (fetch, CORS, ESM, service workers).
+ * Must be called before the `ready` event of `app`.
  */
-export function toAppId(name: string): string {
-  const id = name
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  if (!id) throw new Error(`Cannot derive an app id from federation name "${name}"`);
-  return id;
+export function registerFederationScheme(options: RegisterSchemeOptions = {}): void {
+  protocol.registerSchemesAsPrivileged([
+    {
+      scheme: options.scheme ?? DEFAULT_SCHEME,
+      privileges: {
+        standard: true,
+        secure: true,
+        supportFetchAPI: true,
+        corsEnabled: true,
+        stream: true,
+        codeCache: true,
+      },
+    },
+  ]);
 }
 
-/** Base URL an app is served from in production, e.g. `mf://local/remote-vite/`. */
-export function federationBaseUrl(name: string, options: FederationUrlOptions = {}): string {
-  const { scheme = DEFAULT_SCHEME, host = DEFAULT_HOST } = options;
-  return `${scheme}://${host}/${toAppId(name)}/`;
+export interface ServeFederatedAppsOptions {
+  scheme?: string;
+  host?: string;
+  /** Map of federation `name` (or app id) to the directory holding its build output. */
+  apps: Record<string, string>;
 }
 
-/** URL of a file inside an app, e.g. `federationUrl('remote_vite', 'remoteEntry.js')`. */
-export function federationUrl(
-  name: string,
-  file: string,
-  options: FederationUrlOptions = {},
-): string {
-  return new URL(file.replace(/^\/+/, ''), federationBaseUrl(name, options)).href;
+/**
+ * Serves each app's build output on `<scheme>://<host>/<appId>/`.
+ * Call after `app.whenReady()`. Returns a function that unregisters the handler.
+ */
+export function serveFederatedApps(options: ServeFederatedAppsOptions): () => void {
+  const scheme = options.scheme ?? DEFAULT_SCHEME;
+  const host = options.host ?? DEFAULT_HOST;
+  const apps = Object.fromEntries(
+    Object.entries(options.apps).map(([name, dir]) => [toAppId(name), dir]),
+  );
+
+  protocol.handle(scheme, async (request) => {
+    const url = new URL(request.url);
+    const file = url.host === host ? resolveAppFile(url.pathname, apps) : undefined;
+    if (!file) return new Response('Not found', { status: 404 });
+    return net.fetch(pathToFileURL(file).href);
+  });
+
+  return () => protocol.unhandle(scheme);
 }

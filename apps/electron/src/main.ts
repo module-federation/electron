@@ -1,6 +1,9 @@
 import path from 'node:path';
-import { federationUrl } from '@module-federation/electron';
-import { registerFederationScheme, serveFederatedApps } from '@module-federation/electron/main';
+import {
+  federationUrl,
+  registerFederationScheme,
+  serveFederatedApps,
+} from '@module-federation/electron';
 import { app, BrowserWindow } from 'electron';
 
 const HOSTS = {

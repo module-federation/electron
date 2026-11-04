@@ -1,5 +1,4 @@
-import { federationUrl } from '@module-federation/electron';
-import { federationElectron } from '@module-federation/electron/vite';
+import { federationElectron, federationUrl } from '@module-federation/electron/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
