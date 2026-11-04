@@ -72,10 +72,10 @@ organization:
 2. Add the trusted publisher on npmjs.com (package settings, "Trusted
    Publisher", GitHub Actions) or with npm 11.10+:
    `npm trust github @module-federation/electron --file release.yml --repo module-federation/electron --env Publish --allow-publish`.
-3. Release `0.1.0` through the workflow within two days: npm discards a trusted
+3. Release `0.0.1` through the workflow within two days: npm discards a trusted
    publisher configuration that has not published by then.
 4. Deprecate the placeholder:
-   `npm deprecate @module-federation/electron@0.0.0 "Placeholder; use 0.1.0 or later."`
+   `npm deprecate @module-federation/electron@0.0.0 "Placeholder; use 0.0.1 or later."`
 
 Trusted publishing needs npm 11.5.1+ on Node 22.14+; the workflow's Node 24
-includes it. Releases after `0.1.0` need no manual step.
+includes it. Releases after `0.0.1` need no manual step.
