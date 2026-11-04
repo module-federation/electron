@@ -7,6 +7,7 @@
       "outputs": [".output/**", "dist/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
@@ -14,10 +15,18 @@
       "cache": false,
       "persistent": true
     },
+    "test": {
+      "dependsOn": ["^build", "build"],
+      "outputs": []
+    },
     "typecheck": {
       "dependsOn": ["^build", "^typecheck"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": []
+    },
+    "smoke": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
     },
     "preview": {
       "cache": false,

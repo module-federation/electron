@@ -26,9 +26,11 @@ Run the complete local gate before merging:
 ```bash
 pnpm install --frozen-lockfile
 pnpm format:check
+pnpm lint
 pnpm typecheck
 pnpm build
 pnpm test
+pnpm check:publishable
 pnpm pack:electron
 ```
 

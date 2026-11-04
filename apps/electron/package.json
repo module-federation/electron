@@ -1,0 +1,25 @@
+{
+  "name": "example-electron",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build && wait-on tcp:3000 tcp:3001 tcp:3002 tcp:3003 && electron . --dev",
+    "start": "electron .",
+    "start:vite": "electron . --host=vite",
+    "smoke": "electron . --smoke",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@module-federation/electron": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "example-host-rsbuild": "workspace:*",
+    "example-host-vite": "workspace:*",
+    "example-remote-rsbuild": "workspace:*",
+    "example-remote-vite": "workspace:*",
+    "wait-on": "^9.5.1"
+  }
+}
