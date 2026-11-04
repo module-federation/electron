@@ -1,0 +1,22 @@
+{
+  "name": "mf-electron",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "build:package": "pnpm --filter @module-federation/electron build",
+    "test": "node --test test/*.test.mjs",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pack:electron": "pnpm --filter @module-federation/electron pack:dry"
+  },
+  "devDependencies": {
+    "prettier": "3.9.9",
+    "turbo": "2.11.7",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "@module-federation/electron",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Module Federation integration for Electron",
+  "license": "MIT",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/module-federation/electron.git",
+    "directory": "packages/electron"
+  },
+  "bugs": {
+    "url": "https://github.com/module-federation/electron/issues"
+  },
+  "homepage": "https://github.com/module-federation/electron#readme",
+  "engines": {
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "scripts": {
+    "build": "rslib build --lib cjs && rslib build --lib esm --no-clean",
+    "dev": "rslib build --watch",
+    "pack:dry": "npm pack --dry-run",
+    "prepack": "pnpm run build",
+    "prepublishOnly": "pnpm run typecheck && pnpm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@rslib/core": "1.0.3",
+    "typescript": "7.0.2"
+  }
+}
