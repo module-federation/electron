@@ -1,22 +1,32 @@
 {
   "name": "mf-electron",
   "private": true,
-  "packageManager": "pnpm@12.9.1",
-  "engines": {
-    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
-  },
+  "type": "module",
   "scripts": {
     "build": "turbo run build",
     "build:package": "pnpm --filter @module-federation/electron build",
-    "test": "node --test test/*.test.mjs",
-    "typecheck": "turbo run typecheck",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck && tsc",
+    "lint": "rslint",
+    "lint:fix": "rslint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "smoke": "turbo run smoke",
+    "check:publishable": "node scripts/check-publishable.mjs",
     "pack:electron": "pnpm --filter @module-federation/electron pack:dry"
   },
   "devDependencies": {
-    "prettier": "3.9.9",
-    "turbo": "2.11.7",
-    "typescript": "7.0.2"
-  }
+    "@rslib/core": "^1.0.5",
+    "@rslint/core": "^0.10.0",
+    "@types/node": "^26.6.6",
+    "jiti": "^2.7.0",
+    "oxfmt": "0.75.0",
+    "turbo": "^2.11.10",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "packageManager": "pnpm@12.9.1"
 }
