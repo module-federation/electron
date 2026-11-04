@@ -4,7 +4,7 @@ summary: Release and trusted npm publishing for @module-federation/electron.
 read_when:
   - Preparing a release
   - Updating release automation
-updated_at: 2026-10-12
+updated_at: 2026-11-04
 ---
 
 # Releasing
@@ -37,8 +37,12 @@ pnpm pack:electron
 On every push to `main`, the `Release Please` workflow opens or updates a
 `chore: release <version>` PR that bumps `packages/electron/package.json`,
 `.release-please-manifest.json`, and `packages/electron/CHANGELOG.md`. Edit the
-PR's changelog entry before merging if the commit titles need context. To force
-a version, add a `Release-As: x.y.z` footer to a commit on `main`.
+PR's changelog entry before merging if the commit titles need context.
+
+To force a version, the commit on `main` needs a `Release-As: x.y.z` footer.
+Squash merges here keep only the PR title and drop the body, and rebase merges
+drop empty commits, so set the footer when you merge:
+`gh pr merge <number> --squash --body "Release-As: x.y.z"`.
 
 Merging the release PR makes release-please tag the merge commit and publish a
 GitHub Release named after the version, without a `v` (`0.1.1`, not `v0.1.1`).
@@ -78,6 +82,10 @@ organization:
    publisher configuration that has not published by then.
 4. Deprecate the placeholder:
    `npm deprecate @module-federation/electron@0.0.0 "Placeholder; use 0.0.1 or later."`
+
+npm also has a `0.1.0` from the bootstrap: the initial scaffold, published before
+the version was reset to `0.0.1`. npm never allows a version to be published
+twice, so releases skipped from `0.0.1` to `0.1.1`.
 
 Trusted publishing needs npm 11.5.1+ on Node 22.14+; the workflow's Node 24
 includes it. Releases after `0.0.1` need no manual step.
