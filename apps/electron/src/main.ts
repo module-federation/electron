@@ -1,10 +1,17 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
+  CACHE_HEADER,
   federationUrl,
   registerFederationScheme,
+  resolveAppFile,
   serveFederatedApps,
+  toAppId,
 } from '@module-federation/electron';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 
 const HOSTS = {
   rsbuild: { name: 'host_rsbuild', devUrl: 'http://localhost:3000/' },
@@ -21,6 +28,12 @@ const hostKind: HostKind = args.has('--host=vite') ? 'vite' : 'rsbuild';
 
 const examples = path.resolve(import.meta.dirname, '../..');
 const dist = (dir: string) => path.join(examples, dir, 'dist');
+const localApps = {
+  host_rsbuild: dist('host-rsbuild'),
+  host_vite: dist('host-vite'),
+  remote_rsbuild: dist('remote-rsbuild'),
+  remote_vite: dist('remote-vite'),
+};
 
 // Must run before `app` is ready.
 registerFederationScheme();
@@ -43,9 +56,17 @@ function createWindow(options: { show: boolean; logPrefix: string }) {
   return win;
 }
 
-/** Loads one host and waits until every remote renders, one fails, or 15s pass. */
-async function smokeHost(kind: HostKind): Promise<boolean> {
+/**
+ * Loads one host and waits until every remote renders, one fails, or 15s pass.
+ * With `expectCache`, also checks that each remote's manifest is served from the offline cache.
+ */
+async function smokeHost(
+  kind: HostKind,
+  label: string,
+  options: { expectCache?: boolean } = {},
+): Promise<boolean> {
   const win = createWindow({ show: false, logPrefix: `renderer:${kind}` });
+  const tag = `[smoke:${label}] host_${kind}`;
   try {
     await win.loadURL(hostUrl(kind));
     const deadline = Date.now() + 15_000;
@@ -58,40 +79,116 @@ async function smokeHost(kind: HostKind): Promise<boolean> {
           ),
         })`);
       if (state.rendered.length + Object.keys(state.errors).length === REMOTES.length) {
+        let ok = Object.keys(state.errors).length === 0;
         for (const remote of REMOTES) {
           const error = state.errors[remote];
-          console.log(`[smoke] host_${kind} <- ${remote}: ${error ? `FAIL ${error}` : 'ok'}`);
+          let detail = error ? `FAIL ${error}` : 'ok';
+          if (!error && options.expectCache) {
+            const cache: string | null = await win.webContents.executeJavaScript(
+              `fetch(${JSON.stringify(federationUrl(remote, 'mf-manifest.json'))}, { cache: 'no-store' })
+                .then((response) => response.headers.get(${JSON.stringify(CACHE_HEADER)}))`,
+            );
+            if (cache !== 'stale') {
+              ok = false;
+              detail = `FAIL manifest not served from the cache (${CACHE_HEADER}: ${cache})`;
+            }
+          }
+          console.log(`${tag} <- ${remote}: ${detail}`);
         }
-        return Object.keys(state.errors).length === 0;
+        return ok;
       }
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
     const body = await win.webContents.executeJavaScript('document.body.innerHTML');
-    console.log(`[smoke] host_${kind}: FAIL timed out waiting for remotes. <body>:\n${body}`);
+    console.log(`${tag}: FAIL timed out waiting for remotes. <body>:\n${body}`);
     return false;
   } finally {
     win.destroy();
   }
 }
 
-app.whenReady().then(async () => {
-  if (!isDev) {
-    serveFederatedApps({
-      apps: {
-        host_rsbuild: dist('host-rsbuild'),
-        host_vite: dist('host-vite'),
-        remote_rsbuild: dist('remote-rsbuild'),
-        remote_vite: dist('remote-vite'),
-      },
-    });
-  }
+const MIME_TYPES: Record<string, string> = {
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.json': 'application/json',
+  '.map': 'application/json',
+};
 
+/** Serves each remote's `dist` over HTTP at `/<app-id>/`, standing in for a CDN. */
+async function serveRemotesOverHttp() {
+  let requests = 0;
+  const apps = Object.fromEntries(
+    REMOTES.map((name) => [toAppId(name), localApps[name as keyof typeof localApps]]),
+  );
+  const server = createServer(async (req, res) => {
+    requests++;
+    const file = resolveAppFile(new URL(req.url ?? '/', 'http://x').pathname, apps);
+    const body = file && (await readFile(file).catch(() => undefined));
+    if (!file || !body) return void res.writeHead(404).end();
+    res
+      .writeHead(200, {
+        'content-type': MIME_TYPES[path.extname(file)] ?? 'application/octet-stream',
+        // Keep Chromium's own cache out of the way, so the offline pass relies on ours.
+        'cache-control': 'no-store',
+      })
+      .end(body);
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  return {
+    url: (name: string) => `${origin}/${toAppId(name)}/`,
+    requests: () => requests,
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.closeAllConnections();
+        server.close(() => resolve());
+      }),
+  };
+}
+
+async function smoke(): Promise<boolean> {
+  const results: boolean[] = [];
+  const hosts = Object.keys(HOSTS) as HostKind[];
+
+  // Every app from its build directory.
+  let unhandle = serveFederatedApps({ apps: localApps });
+  for (const kind of hosts) results.push(await smokeHost(kind, 'dist'));
+  unhandle();
+
+  // Remotes from a URL, then from the offline cache once that URL is down.
+  const remotes = await serveRemotesOverHttp();
+  const cacheDir = await mkdtemp(path.join(tmpdir(), 'mf-electron-smoke-'));
+  unhandle = serveFederatedApps({
+    apps: {
+      ...localApps,
+      ...Object.fromEntries(REMOTES.map((name) => [name, remotes.url(name)])),
+    },
+    cache: { dir: cacheDir },
+  });
+  try {
+    for (const kind of hosts) results.push(await smokeHost(kind, 'url'));
+    console.log(`[smoke:url] remote server answered ${remotes.requests()} requests`);
+    results.push(remotes.requests() > 0);
+
+    await remotes.close();
+    await session.defaultSession.clearCache();
+    for (const kind of hosts) results.push(await smokeHost(kind, 'offline', { expectCache: true }));
+  } finally {
+    unhandle();
+    await remotes.close().catch(() => {});
+    await rm(cacheDir, { recursive: true, force: true });
+  }
+  return results.every(Boolean);
+}
+
+app.whenReady().then(async () => {
   if (isSmoke) {
-    const results = [];
-    for (const kind of Object.keys(HOSTS) as HostKind[]) results.push(await smokeHost(kind));
-    app.exit(results.every(Boolean) ? 0 : 1);
+    app.exit((await smoke()) ? 0 : 1);
     return;
   }
+
+  if (!isDev) serveFederatedApps({ apps: localApps });
 
   await createWindow({ show: true, logPrefix: 'renderer' }).loadURL(hostUrl(hostKind));
 });
