@@ -37,6 +37,51 @@ app.whenReady().then(() => {
 
 `serveFederatedApps` maps each federation `name` to its build directory and returns a function that unregisters the handler. Requests outside an app's directory get a 404.
 
+## Remotes deployed to a URL
+
+An app can also be an `http(s)` URL. Requests for `mf://local/<app-id>/<path>` are fetched from `<url>/<path>` in the main process, so the renderer still sees one origin and needs no CORS setup:
+
+```ts
+serveFederatedApps({
+  apps: {
+    host: '/path/to/host/dist',
+    remote: 'https://cdn.example.com/remote/',
+  },
+});
+```
+
+Build the remote with the Rsbuild or Vite plugin from this package, so its chunks load from `mf://local/<app-id>/` too. A remote whose `publicPath` is an absolute `https://` URL loads its chunks directly, without the offline cache.
+
+### Offline cache
+
+Responses from remote apps are cached on disk, so the app keeps working when a remote is down:
+
+| Situation                                                                       | Response                                                                                   |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Remote answers 2xx                                                              | The fresh response. It replaces the cached copy.                                           |
+| Offline, DNS failure, connection refused                                        | The cached copy.                                                                           |
+| Remote answers an error status (a broken deploy returning 500 or 404)           | The cached copy. Error responses are never cached.                                         |
+| No response within the connect timeout, or the body stalls for the read timeout | The cached copy. For the next 30 s, other cached requests to that origin skip the network. |
+| Not reachable and never cached (first launch offline)                           | `502`, or `504` on a timeout. Module Federation reports a failed remote.                   |
+
+- **Network first.** The cache is used only when the network fails, so a remote that is up always serves its latest release.
+- **Only `GET` responses are cached**, together with their headers, so ES module remotes still pass MIME checks offline. Query strings are ignored, so cache-busting parameters still hit the cache.
+- Responses served from the cache carry an `x-mf-cache: stale` header (exported as `CACHE_HEADER`). Fallbacks are logged with `console.warn`.
+- Writes go through a temporary file and a rename, so a crash never leaves a partial entry. To reset the cache, quit the app and delete its directory.
+
+```ts
+serveFederatedApps({
+  apps: { remote: 'https://cdn.example.com/remote/' },
+  cache: {
+    dir: path.join(app.getPath('userData'), 'remotes'), // default: <sessionData>/module-federation
+    connectTimeout: 10_000, // ms to wait for response headers
+    readTimeout: 10_000, // ms the body may stall, not a limit on the whole download
+  },
+});
+```
+
+Pass `cache: false` to proxy remote apps without caching.
+
 ## Rsbuild
 
 `./rsbuild` and `./vite` re-export the URL helpers, so build configs don't load `electron`.
