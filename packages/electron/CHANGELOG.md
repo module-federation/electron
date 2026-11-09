@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/module-federation/electron/compare/0.1.1...0.2.0) (2026-11-09)
+
+
+### Features
+
+* load remotes from a URL with an offline cache ([#12](https://github.com/module-federation/electron/issues/12)) ([fbd816a](https://github.com/module-federation/electron/commit/fbd816ad54b6751b25a6835d2da9e6833d1b2872))
+
 ## [0.1.1](https://github.com/module-federation/electron/compare/0.1.0...0.1.1) (2026-11-04)
 
 
