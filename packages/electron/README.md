@@ -1,8 +1,20 @@
-# @module-federation/electron
+<h1 align="center">@module-federation/electron</h1>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@module-federation/electron">
+    <img src="https://img.shields.io/npm/v/@module-federation/electron?style=flat-square&colorA=564341&colorB=EDED91" alt="npm version" />
+  </a>
+  <a href="https://npmcharts.com/compare/@module-federation/electron?minimal=true">
+    <img src="https://img.shields.io/npm/dm/@module-federation/electron.svg?style=flat-square&colorA=564341&colorB=EDED91" alt="downloads" />
+  </a>
+  <a href="https://github.com/module-federation/electron/blob/main/LICENSE">
+    <img src="https://img.shields.io/npm/l/@module-federation/electron?style=flat-square&colorA=564341&colorB=EDED91" alt="license" />
+  </a>
+</p>
 
 Module Federation for Electron renderers built with Rsbuild or Vite. Hosts and remotes can use either bundler.
 
-In production every federated app is served from one privileged custom protocol, `mf://local/<app-id>/`. All apps share one origin, so remote entries, manifests and chunks load without CORS setup.
+In production every federated app is served from one privileged custom protocol, `mf://local/<app-id>/`. All apps share one origin, so remote entries, manifests and chunks load without CORS setup, whether an app's files sit on disk or come from a CDN. Remotes fetched from a URL are cached on disk, so the app keeps working offline.
 
 ## Install
 
@@ -64,7 +76,7 @@ Responses from remote apps are cached on disk, so the app keeps working when a r
 | No response within the connect timeout, or the body stalls for the read timeout | The cached copy. For the next 30 s, other cached requests to that origin skip the network. |
 | Not reachable and never cached (first launch offline)                           | `502`, or `504` on a timeout. Module Federation reports a failed remote.                   |
 
-- **Network first.** The cache is used only when the network fails, so a remote that is up always serves its latest release.
+- **Network first.** The cache is used only when the network fails, so a remote that is up serves its latest release. After any failed request, other cached requests to that origin skip the network for 30 s, so a remote that has just recovered is picked up after that window.
 - **Only `GET` responses are cached**, together with their headers, so ES module remotes still pass MIME checks offline. Query strings are ignored, so cache-busting parameters still hit the cache.
 - Responses served from the cache carry an `x-mf-cache: stale` header (exported as `CACHE_HEADER`). Fallbacks are logged with `console.warn`.
 - Writes go through a temporary file and a rename, so a crash never leaves a partial entry. To reset the cache, quit the app and delete its directory.
@@ -124,3 +136,43 @@ Both plugins take a second argument, `{ electron: { protocol, scheme, host } }`:
 - `scheme` / `host` (default `mf` / `local`): change the URL. Pass the same values to `registerFederationScheme` and `serveFederatedApps`.
 
 The Rsbuild plugin also takes `{ rsbuild }`, which is passed through to `@module-federation/rsbuild-plugin`.
+
+## API
+
+From `@module-federation/electron` (main process only, it imports `electron`):
+
+| Export                                                 | Description                                                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `registerFederationScheme({ scheme? })`                | Registers the scheme as privileged (standard, secure, fetch, CORS, streaming). Call before `app` is ready. |
+| `serveFederatedApps({ apps, cache?, scheme?, host? })` | Serves each app from its directory or URL. Call after `app.whenReady()`. Returns an unregister function.   |
+| `resolveAppFile(pathname, dirs)`                       | Resolves an `mf://` path to a file inside an app's directory, or `undefined` if it falls outside.          |
+| `CACHE_HEADER`                                         | `'x-mf-cache'`, set to `stale` on responses served from the offline cache.                                 |
+
+From every entry point, including `./rsbuild` and `./vite`:
+
+| Export                                | Description                                                                               |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `federationUrl(name, file, options?)` | URL of a file inside an app, e.g. `mf://local/remote-vite/mf-manifest.json`.              |
+| `federationBaseUrl(name, options?)`   | Base URL an app is served from, e.g. `mf://local/remote-vite/`.                           |
+| `toAppId(name)`                       | Normalizes a federation `name` into the URL path segment (`remote_vite` → `remote-vite`). |
+| `DEFAULT_SCHEME`, `DEFAULT_HOST`      | `'mf'` and `'local'`.                                                                     |
+
+From `./rsbuild`: `pluginModuleFederationElectron(federation, { electron?, rsbuild? })`, and `pluginElectron(name, options?)` if you register `@module-federation/rsbuild-plugin` yourself.
+
+From `./vite`: `federationElectron(federation, { electron? })`, and `electron(name, options?)` if you register `@module-federation/vite` yourself.
+
+## Troubleshooting
+
+- **A Vite remote's React bindings are `undefined` in an Rsbuild host**: use `@module-federation/vite` 1.23.9 or later ([module-federation/vite#1535](https://github.com/module-federation/vite/issues/1535)).
+- **`does not provide an export named 'net'`**: `ELECTRON_RUN_AS_NODE=1` is set, usually by a terminal inside VS Code or another Electron app. Unset it before starting Electron.
+
+## Links
+
+- [Repository and examples](https://github.com/module-federation/electron)
+- [Module Federation documentation](https://module-federation.io/)
+- [Discord](https://discord.gg/n69NnT3ACV)
+- [Issues](https://github.com/module-federation/electron/issues)
+
+## License
+
+[MIT](https://github.com/module-federation/electron/blob/main/LICENSE)
