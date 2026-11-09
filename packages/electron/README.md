@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/module-federation/electron/main/assets/icon.svg" width="96" height="96" alt="Module Federation for Electron">
-</p>
-
 <h1 align="center">@module-federation/electron</h1>
 
 <p align="center">
